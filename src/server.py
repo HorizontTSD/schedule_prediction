@@ -10,13 +10,18 @@ from src.api import api_router
 from src.core.configuration.config import settings
 from src.core.token import token_validator
 
+API_PREFIX = "/schedule_prediction"
+docs_url = "/docs"
+
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    docs_url="/template_fast_api/v1/",
-    openapi_url='/template_fast_api/v1/openapi.json',
+    docs_url=docs_url,
+    openapi_url="/openapi.json",
+    root_path=API_PREFIX,
     dependencies=[Depends(token_validator)] if settings.VERIFY_TOKEN else []
-    )
+)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,9 +31,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(
-    api_router, prefix='/api'
-)
+app.include_router(api_router, prefix="/api/v1")
+
 
 @app.get("/")
 def read_root():
@@ -37,6 +41,7 @@ def read_root():
 
 if __name__ == "__main__":
     try:
+        print(f'🚀 Документация http://0.0.0.0:{settings.PORT}{API_PREFIX}/docs')
         logger.info(f"Starting server on http://{settings.HOST}:{settings.PORT}")
         uvicorn.run(
             "server:app",

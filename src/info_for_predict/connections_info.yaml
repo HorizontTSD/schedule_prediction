@@ -1,0 +1,14 @@
+1: {
+    "company_id": 1,
+    "db_connections_id": 1,
+    "db_connections_method": "TimesacleDB",
+    "credentials":
+      {
+        "dbname": "dbname",
+        "host": "hashed_host",
+        "port": "hashed_port",
+        "user": "hashed_user",
+        "password": "hashed_password"
+      }
+
+}

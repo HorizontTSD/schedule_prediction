@@ -1,0 +1,28 @@
+[
+  {
+    "company_name": "University of Brescia",
+    "company_id": 1,
+    "data_to_predict" : [
+          {
+            "data_id": 1,
+            "data_name": "Italy Electricity Consumption",
+            "source_table": "load_consumption",
+            "time_column": "Datetime",
+            "target_column": "load_consumption",
+            "discreteness": 300,
+            "count_time_points_predict": 288,
+            "target_db": "horizon",
+            "methods_predict": [
+              {
+                "method": "XGBoost",
+                "target_table": "xgb_predict_load_consumption"
+              },
+              {
+                "method": "LSTM",
+                "target_table": "predict_load_consumption"
+              },
+            ]
+          }
+    ]
+  }
+]

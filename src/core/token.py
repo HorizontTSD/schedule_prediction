@@ -1,9 +1,9 @@
 import logging
 from typing import List, Optional
 
-import yaml
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+import pandas as pd
 
 from src.core.configuration.config import settings
 
@@ -21,16 +21,9 @@ class TokenValidator:
                 raise ValueError("Environment variable TOKEN_LIST is not set or empty.")
 
             logger.info(f"Loading tokens from: {tokens_link}")
-            with open(tokens_link, 'r', encoding='utf-8') as file:
-                tokens_data = yaml.safe_load(file)
 
-            if not tokens_data or "tokens" not in tokens_data:
-                raise ValueError("Tokens file is empty or does not contain the 'tokens' key.")
-
-            valid_tokens = [
-                token["token"] for token in tokens_data["tokens"]
-                if token.get("source") == "tool_backend"
-            ]
+            df = pd.read_csv(tokens_link, encoding='utf-8')
+            valid_tokens = df.loc[df['source'] == 'horizon_orchestrator', 'token'].tolist()
 
             if not valid_tokens:
                 raise ValueError("No valid tokens found for 'tool_backend' source.")
@@ -57,6 +50,6 @@ class TokenValidator:
             )
         logger.info(f"Token verified successfully: {token[:5]}...")
         return token
-    
+
 
 token_validator = TokenValidator()
