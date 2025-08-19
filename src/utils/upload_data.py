@@ -16,7 +16,7 @@ path_to_yamls = os.path.join(home_path, "src", "info_for_predict")
 path_to_yaml_db_connection_info = os.path.join(path_to_yamls, "connections_info.yaml")
 
 
-async def upload_predict_to_db(company_id, response, destination_table, time_column, target_col):
+async def upload_predict_to_db(credentials, func_create_client, response, destination_table, time_column, target_col):
 
     try:
 
@@ -27,22 +27,7 @@ async def upload_predict_to_db(company_id, response, destination_table, time_col
         df_predict_date[time_column] = pd.to_datetime(df_predict_date[time_column])
         min_date = df_predict_date[time_column].min()
 
-        with open(path_to_yaml_db_connection_info, "r") as f:
-            connections_info = yaml.safe_load(f)
-
-        company = connections_info[company_id]
-        db_connections_id = company["db_connections_id"]
-        credentials = company["credentials"]
-
-        credentials["dbname"] = os.getenv("PG_DB")
-        credentials["user"] = os.getenv("PG_USER")
-        credentials["password"] = os.getenv("PG_PASSWORD")
-        credentials["host"] = os.getenv("PG_HOST")
-        credentials["port"] = os.getenv("PG_PORT")
-
-        create_client = db_connections_mapping[db_connections_id]
-
-        conn = create_client(**credentials)
+        conn = func_create_client(**credentials)
         cur = conn.cursor()
 
         query = f"""

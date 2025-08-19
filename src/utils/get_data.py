@@ -2,12 +2,13 @@ from src.core.logger import logger
 from src.clients.create_clients import get_db_connection
 import pandas as pd
 import os
-import yaml
 from dotenv import load_dotenv
+from src.db_scripts.test_db_area.test_client import test_get_db_connection
+
 load_dotenv()
 
 db_connections_mapping = {
-    1: get_db_connection,
+    "TimescaleDB": get_db_connection,
 }
 
 home_path = os.getcwd()
@@ -16,24 +17,32 @@ path_to_yamls = os.path.join(home_path, "src", "info_for_predict")
 path_to_yaml_db_connection_info = os.path.join(path_to_yamls, "connections_info.yaml")
 
 
-async def get_data(company_id, table_name, time_col, target_col):
+async def get_data(company_id, connection_id, table_name, time_col, target_col):
     try:
-        with open(path_to_yaml_db_connection_info, "r") as f:
-            connections_info = yaml.safe_load(f)
-        company = connections_info[company_id]
-        db_connections_id = company["db_connections_id"]
+        conn = test_get_db_connection()
 
-        credentials = company["credentials"]
+        query = f"""
+            SELECT *
+            FROM connection_settings
+            WHERE organization_id = ?
+              AND id = ?
+        """
+        df_connection_settings = pd.read_sql_query(query, conn, params=(company_id, connection_id))
+        conn.close()
+        print(df_connection_settings)
+        db_connections_schema_id = df_connection_settings["connection_schema"].values[0]
 
-        credentials["dbname"] = os.getenv("PG_DB")
-        credentials["user"] = os.getenv("PG_USER")
-        credentials["password"] = os.getenv("PG_PASSWORD")
-        credentials["host"] = os.getenv("PG_HOST")
-        credentials["port"] = os.getenv("PG_PORT")
+        credentials = {
+            "dbname": df_connection_settings["db_name"].values[0],
+            "user": df_connection_settings["db_user"].values[0],
+            "password": df_connection_settings["db_password"].values[0],
+            "host": df_connection_settings["host"].values[0],
+            "port": df_connection_settings["port"].values[0],
+        }
 
-        create_client = db_connections_mapping[db_connections_id]
+        func_create_client = db_connections_mapping[db_connections_schema_id]
 
-        conn = create_client(**credentials)
+        conn = func_create_client(**credentials)
         cur = conn.cursor()
 
         select_query = f"""
@@ -55,7 +64,7 @@ async def get_data(company_id, table_name, time_col, target_col):
         logger.info("Transforming data into DataFrame.")
         df_last_values = pd.DataFrame(rows, columns=[time_col, target_col])
 
-        return df_last_values
+        return df_last_values, credentials, func_create_client
         
     except Exception as e:
         logger.info(e)

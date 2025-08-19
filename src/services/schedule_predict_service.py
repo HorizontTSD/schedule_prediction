@@ -1,6 +1,5 @@
 import os
-
-import yaml
+import json
 
 from src.utils.get_data import get_data
 from src.utils.upload_data import upload_predict_to_db
@@ -11,6 +10,9 @@ from src.utils.xgboost_api_predict import func_xgboost_generate_forecast
 
 from dotenv import load_dotenv
 from src.core.logger import logger
+from src.db_scripts.test_db_area.test_client import test_get_db_connection
+import pandas as pd
+
 
 load_dotenv()
 
@@ -18,37 +20,46 @@ home_path = os.getcwd()
 
 path_to_yamls = os.path.join(home_path, "src", "info_for_predict")
 
-path_to_yaml_forecast_schemas = os.path.join(path_to_yamls, "forecast_schemas.yaml")
-path_to_yaml_db_connection_info = os.path.join(path_to_yamls, "connections_info.yaml")
-
 
 async def schedule_predict():
 
-    with open(path_to_yaml_forecast_schemas, "r") as f:
-        forecast_schemas = yaml.safe_load(f)
+    conn = test_get_db_connection()
 
-    for company in  forecast_schemas:
-        company_name = company["company_name"]
-        company_id = company["company_id"]
-        data_to_predict_list = company["data_to_predict"]
+    query_companies = "SELECT * FROM organizations"
+    df_companies = pd.read_sql_query(query_companies, conn)
 
-        for data_to_predict in data_to_predict_list:
+    query_schedule_forecasting = "SELECT * FROM schedule_forecasting"
+    df_schedule_forecasting = pd.read_sql_query(query_schedule_forecasting, conn)
+
+    conn.close()
+
+    for index, row_company in  df_companies.iterrows():
+        company_name = row_company["name"]
+        company_id = row_company["id"]
+        df_data_to_predict = df_schedule_forecasting[df_schedule_forecasting["organization_id"] == company_id]
+
+        for index, data_to_predict in df_data_to_predict.iterrows():
             data_id = data_to_predict["data_id"]
             data_name = data_to_predict["data_name"]
+            connection_id = data_to_predict["connection_id"]
+
+            print(f"connection_id = {connection_id}")
+
             source_table = data_to_predict["source_table"]
             time_column = data_to_predict["time_column"]
             target_column = data_to_predict["target_column"]
             discreteness = data_to_predict["discreteness"]
             target_db = data_to_predict["target_db"]
             count_time_points_predict = data_to_predict["count_time_points_predict"]
-            methods_predict = data_to_predict["methods_predict"]
+            # methods_predict = data_to_predict["methods_predict"]
+            methods_predict = json.loads(data_to_predict["methods_predict"])
 
-            df_last_values = await get_data(
+            df_last_values, credentials, func_create_client = await get_data(
                 company_id=company_id,
+                connection_id=connection_id,
                 table_name=source_table,
                 time_col=time_column,
                 target_col=target_column)
-
 
             forecast_horizon_time, df = await preprocess_last_values_data(
                 df_last_values=df_last_values,
@@ -70,8 +81,13 @@ async def schedule_predict():
                 elif method == "XGBoost":
                     pass
 
+                if target_db == "user": # Если они сохраняют к нам то меняем загрузку данных на наше соеденение
+                    credentials=credentials # В данном случае оно одно и тоже тк тестовые данные
+                    func_create_client=func_create_client
+
                 success = await upload_predict_to_db(
-                    company_id=company_id,
+                    credentials=credentials,
+                    func_create_client=func_create_client,
                     response=response,
                     destination_table=target_table,
                     time_column=time_column,
