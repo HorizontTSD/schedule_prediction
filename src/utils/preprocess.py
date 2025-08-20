@@ -14,8 +14,8 @@ async def preprocess_last_values_data(df_last_values, time_col, count_time_point
         datetime_range = pd.date_range(
             start=last_know_date,
             periods=count_time_points_predict,
-            freq=f"{time_interval}S"
-        ).floor("S")
+            freq=f"{time_interval}s"
+        ).floor("s")
 
         df = df_last_values
 

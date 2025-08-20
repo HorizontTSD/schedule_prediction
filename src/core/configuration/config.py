@@ -16,7 +16,7 @@ class Settings:
         self.PORT = env.int('PORT', 7070)
 
         self.TOKENS_LIST = env.str('TOKENS_LIST')
-        self.VERIFY_TOKEN = env.bool('VERIFY_TOKEN', False)
+        self.VERIFY_TOKEN = env.bool('VERIFY_TOKEN', True)
 
 
     def get_origins_urls(self):
@@ -25,9 +25,6 @@ class Settings:
 
 
         return 'http://localhost'
-    
-
-
 
 
 settings = Settings()

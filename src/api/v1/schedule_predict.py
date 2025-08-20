@@ -19,9 +19,9 @@ async def func_schedule_predict():
     """
     try:
         logger.info(f"Starting prediction schedule for all")
-        await schedule_predict()
+        report = await schedule_predict()
         logger.info("Prediction process completed successfully.")
-        return {"message": f"Prediction was completed successfully."}
+        return report
     except Exception as ApplicationError:
         logger.error(f"Error occurred during prediction: {ApplicationError.__repr__()}")
         raise HTTPException(

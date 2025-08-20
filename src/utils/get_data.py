@@ -29,7 +29,6 @@ async def get_data(company_id, connection_id, table_name, time_col, target_col):
         """
         df_connection_settings = pd.read_sql_query(query, conn, params=(company_id, connection_id))
         conn.close()
-        print(df_connection_settings)
         db_connections_schema_id = df_connection_settings["connection_schema"].values[0]
 
         credentials = {
