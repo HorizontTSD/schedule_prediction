@@ -20,6 +20,11 @@ dependencies = [
     "environs>=14.3.0",
     "ruff>=0.12.7",
     "psycopg2-binary>=2.9.10",
+    "sqlalchemy>=2.0.43",
+    "passlib>=1.7.4",
+    "cryptography>=45.0.7",
+    "greenlet>=3.2.4",
+    "asyncpg>=0.30.0",
 
 ]
 requires-python = "==3.12.*"

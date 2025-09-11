@@ -17,8 +17,7 @@ token = os.getenv("TOOL_BACKEND_TOKEN")
 
 async def func_xgboost_generate_forecast(df: pd.DataFrame, time_column: str, col_target: str, forecast_horizon_time: str):
 
-    url = f'{url_backend}/api/v1/predict-xgboost/'
-
+    url = f'{url_backend}/api/v1/predict-xgboost'
     df = df.copy()
     for col in df.select_dtypes(include=['datetime64[ns]']):
         df[col] = df[col].dt.strftime("%Y-%m-%d %H:%M:%S")
