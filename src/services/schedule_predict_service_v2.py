@@ -152,7 +152,11 @@ async def get_table_data_df(table_name: str, source_db_manager) -> pd.DataFrame:
 
 
 async def schedule_predict():
-    df = await get_all_forecast_configs_df()
+    try:
+        df = await get_all_forecast_configs_df()
+    except HTTPException as e:
+        raise e
+
     for index, row in df.iterrows():
         connection_id = row.connection_id
         target_db = row.target_db
@@ -196,7 +200,10 @@ async def insert_predict_to_table(df: pd.DataFrame, target_table: str, target_db
 
 
 async def schedule_predict_v2():
-    df = await get_all_forecast_configs_df()
+    try:
+        df = await get_all_forecast_configs_df()
+    except HTTPException as e:
+        raise e
     logs = {}
 
     for index, row in df.iterrows():
@@ -331,9 +338,9 @@ async def schedule_predict_v2():
     return logs
 
 
-async def main():
-    logs = await schedule_predict()
-    print(logs)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+# async def main():
+#     logs = await schedule_predict()
+#     print(logs)
+#
+# if __name__ == "__main__":
+#     asyncio.run(main())

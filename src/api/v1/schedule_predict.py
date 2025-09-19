@@ -44,19 +44,19 @@ async def func_schedule_predict_v2():
     Возвращает статус выполнения задачи.
     """
     try:
-        logger.info(f"Starting prediction schedule for all")
+        logger.info("Starting prediction schedule for all")
         report = await schedule_predict_v2()
         logger.info("Prediction process completed successfully.")
         return report
-    except Exception as ApplicationError:
-        logger.error(f"Error occurred during prediction: {ApplicationError.__repr__()}")
+    except HTTPException as e:
+        # Пробрасываем исключение напрямую
+        raise e
+    except Exception as e:
+        logger.error(f"Error occurred during prediction: {e!r}")
         raise HTTPException(
-            status_code=400,
+            status_code=500,
             detail="Unknown Error",
-            headers={"X-Error": f"{ApplicationError.__repr__()}"},
+            headers={"X-Error": f"{e!r}"},
         )
-
-
-
 
 
