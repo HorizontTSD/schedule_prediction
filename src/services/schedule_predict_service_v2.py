@@ -132,8 +132,13 @@ async def ensure_tables_exist(
             try:
                 await session.execute(create_query)
                 await session.commit()
+                return True
             except Exception as e:
-                print(f"Не удалось создать таблицу {table_name}: {e}")
+                if 'already exists' in str(e):
+                    await session.rollback()
+                    return True
+                print(f"Не удалось создать таблицу {table_name_safe}: {e}")
+                await session.rollback()
                 return False
     return True
 
