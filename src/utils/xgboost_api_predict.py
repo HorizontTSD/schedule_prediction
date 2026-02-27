@@ -19,6 +19,7 @@ async def func_xgboost_generate_forecast(df: pd.DataFrame, time_column: str, col
 
     url = f'{url_backend}/api/v1/predict-xgboost'
     df = df.copy()
+
     for col in df.select_dtypes(include=['datetime64[ns]']):
         df[col] = df[col].dt.strftime("%Y-%m-%d %H:%M:%S")
     df_records = df.to_dict(orient='records')
@@ -37,7 +38,7 @@ async def func_xgboost_generate_forecast(df: pd.DataFrame, time_column: str, col
         if response.status_code == 200:
             return response.json()
         else:
-            logger.info(f"Ошибка при запросе: {response.status_code}")
+            logger.info(f"Ошибка при запросе: {response.status_code} {response.text}")
             return None
     except requests.exceptions.RequestException as e:
         logger.info(f"Ошибка при запросе: {e}")

@@ -24,6 +24,7 @@ async def preprocess_last_values_data(df_last_values, time_col, count_time_point
         df_last_values = df_last_values.sort_values(by=time_col, ascending=True)
 
         last_know_date = df_last_values[time_col].iloc[-1]
+
         logger.info(f"Last known date: {last_know_date}")
 
         datetime_range = pd.date_range(
@@ -33,6 +34,7 @@ async def preprocess_last_values_data(df_last_values, time_col, count_time_point
         ).floor("s")
 
         df = df_last_values
+
 
         forecast_horizon_time = datetime_range[-1].strftime("%Y-%m-%d %H:%M:%S")
 
@@ -313,13 +315,21 @@ async def schedule_predict_v2():
                 preds = response['map_data']['data']['predictions']
                 df_preds = pd.DataFrame(preds)[[time_column, target_column]]
 
-                await insert_predict_to_table(
-                    df=df_preds,
-                    target_table=target_table,
-                    target_db_manager=target_db_manager,
-                    time_column=time_column,
-                    target_column=target_column
-                )
+                last_predicted_line = df_preds.iloc[-1]
+
+                logger.info(f"Last predicted line: {last_predicted_line}")
+
+                df_preds[target_column] = pd.to_numeric(df_preds[target_column], errors='coerce')
+                try:
+                    await insert_predict_to_table(
+                        df=df_preds,
+                        target_table=target_table,
+                        target_db_manager=target_db_manager,
+                        time_column=time_column,
+                        target_column=target_column
+                    )
+                except Exception as e:
+                    raise HTTPException(status_code=500, detail=f"Ошибка при записи в таблицу {target_table}: {e}")
 
                 logs[connection_id]["report"]["success"].append({
                     "connection_id": connection_id,
